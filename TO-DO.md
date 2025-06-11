@@ -13,3 +13,10 @@ Kernel 2: Sigmoidal - Raphael
 - fixar um parâmetro e variar o outro
 - primeiro para dados fakes 2 D
 - depois para um do mlbench
+
+
+---------------
+
+
+Métodos Sugeridos / Possíveis
+- divergência de distribuição (ver internet)
