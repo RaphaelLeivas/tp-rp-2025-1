@@ -8,25 +8,6 @@ library("mlbench")
 
 set.seed(203)
 
-
-# m <- matrix(1:4, ncol=2)
-# colnames(m) <- paste("C", 1:2, sep="")
-# rownames(m) <- paste("R", 1:2, sep="")
-# m
-# 
-# labels <- c("K21", "K11", "K22", "K12")
-# 
-# image(1:ncol(m), 1:nrow(m), t(m), col = terrain.colors(4), axes = FALSE)
-# axis(1, 1:ncol(m), colnames(m), labels = FALSE)
-# axis(2, 1:nrow(m), rownames(m))
-# for (x in 1:nrow(m))
-#   for (y in 1:ncol(m)) {
-#     text(x, y, labels[(x - 1) * ncol(m) + y])
-#     print((x - 1) * ncol(m) + y)
-#   }
-#     
-# BUG()
-
 C1_LABEL = -1
 C2_LABEL = 1
 
@@ -113,7 +94,7 @@ yc1 <- rep(C1_LABEL, nc)
 yc2 <- rep(C2_LABEL, nc)
 Y <- c(yc1, yc2)
 
-h_list <- seq(0.1, 20, 1)
+h_list <- seq(0.1, 30, 1)
 C <- 10
 
 dist_arr <- c()
@@ -122,6 +103,8 @@ area1_arr <- c()
 for (h in h_list) {
   dall <- as.matrix(dist(X, diag = T, upper = T))
   kall <- exp(-(dall * dall) / (2 * (h)^2)) # essa é a matriz de kernel
+
+  kall <- tanh(X %*% t(X) / (2 * (h)^2))
   
   k11 <- kall[1:nc1, 1:nc1]
   k12 <- kall[(1:nc1),((nc1+1):nc_total)]
@@ -139,13 +122,13 @@ for (h in h_list) {
   plot(
     NULL,
     main = paste("SVM: h = ", h),
-    xlab = "p1",
-    ylab = "p2",
+    xlab = "x1",
+    ylab = "x2",
     ylim = c(0, 1),
     xlim = c(0, 1),
     cex.main = 2,
     cex.axis = 2,
-    cex.lab = 1.5
+    cex.lab = 2
   )
 
   points(p1[,1], p1[,2], col = "red", lwd = 2)
@@ -162,42 +145,16 @@ for (h in h_list) {
   # a2 <- sd(p2[which(p2[,1] <= p2[,2]),1]) # somente os acima da reta
   # b2 <- sd(p2[which(p2[,1] <= p2[,2]),2])
   
-  number_of_sds <- 2
-  
-  a1 <- number_of_sds * sd(p1[,1])
-  b1 <- number_of_sds * sd(p1[,2])
-  a2 <- number_of_sds * sd(p2[,1])
-  b2 <- number_of_sds * sd(p2[,2])
+  a1 <- sd(p1[,1])
+  b1 <- sd(p1[,2])
+  a2 <- sd(p2[,1])
+  b2 <- sd(p2[,2])
   
   area1 <- pi * a1 * b1
   area2 <- pi * a2 * b2
   
   dist_arr <- c(dist_arr, distance_two_points(m1, m2))
-  area1_arr <- c(area1_arr, (area1 + area2) / 2)
-  
-  xc <- m1[1] # center x_c or h
-  yc <- m1[2] # y_c or k
-  a <- a1 # major axis length
-  b <- b1 # minor axis length
-  phi <- pi / 3 # angle of major axis with x axis phi or tau
-  
-  t <- seq(0, 2*pi, 0.01) 
-  x <- xc + a*cos(t)*cos(phi) - b*sin(t)*sin(phi)
-  y <- yc + a*cos(t)*cos(phi) + b*sin(t)*cos(phi)
-
-  lines(x,y,pch=19, col='red', lwd = 4, lty = "dashed")
-  
-  xc <- m2[1] # center x_c or h
-  yc <- m2[2] # y_c or k
-  a <- a2 # major axis length
-  b <- b2 # minor axis length
-  phi <- pi / 3 # angle of major axis with x axis phi or tau
-  
-  t <- seq(0, 2*pi, 0.01) 
-  x <- xc + a*cos(t)*cos(phi) - b*sin(t)*sin(phi)
-  y <- yc + a*cos(t)*cos(phi) + b*sin(t)*cos(phi)
-  
-  lines(x,y,pch=19, col='blue', lwd = 4, lty = "dashed")
+  area1_arr <- c(area1_arr, area1 + area2)
 }
 
 DIST_COL <- "black"
@@ -216,8 +173,6 @@ plot(h_list, area1_arr, axes = FALSE, bty = "n", xlab = "", ylab = "",
 axis(side=4, at = pretty(range(area1_arr)), col=AREA_COL, cex.axis = 1.5, col.axis=AREA_COL)
 mtext("Área Elipse", side=4, line=3, col=AREA_COL)
 
-# Add Legend
+## Add Legend
 legend("bottom",legend=c("Distância entre Centros","Área da Elipse"),
        text.col=c(DIST_COL,AREA_COL),pch=c(16,15),col=c(DIST_COL,AREA_COL))
-
-
