@@ -85,20 +85,20 @@ for (i in 1:N) {
 # ------- TRATAMENTO ZOO ---------
 
 # ------- TRATAMENTO VEHICLE ---------
-data4 <- data4[complete.cases(data4),]
-
-label_column <- ncol(data4)
-
-X <- data4[, 1:(ncol(data4) - 1)]
-Y <- c()
-
-for (i in 1:nrow(data4)) {
-  if (data4[i, ncol(data4)] == "bus") {
-    Y <- c(Y, C1_LABEL)
-  } else {
-    Y <- c(Y, C2_LABEL)
-  }
-}
+# data4 <- data4[complete.cases(data4),]
+# 
+# label_column <- ncol(data4)
+# 
+# X <- data4[, 1:(ncol(data4) - 1)]
+# Y <- c()
+# 
+# for (i in 1:nrow(data4)) {
+#   if (data4[i, ncol(data4)] == "bus") {
+#     Y <- c(Y, C1_LABEL)
+#   } else {
+#     Y <- c(Y, C2_LABEL)
+#   }
+# }
 
 # ------- TRATAMENTO VEHICLE ---------
 
@@ -172,9 +172,9 @@ Y <- all_data[, ncol(all_data)]
 
 # RBF
 # h_list <- seq(0.1, 5, 0.2) # XOR
-# h_list <- seq(0.1, 20, 1) # BreastCancer
+h_list <- seq(0.1, 20, 1) # BreastCancer
 # h_list <- seq(0.1, 5, 0.1) # Zoo
-h_list <- seq(0.1, 1000, 50) # Vehicle
+# h_list <- seq(0.1, 1000, 50) # Vehicle
 # h_list <- seq(0.1, 10, 0.5) # Glass
 
 C <- 10
@@ -187,7 +187,7 @@ for (h in h_list) {
   dall <- as.matrix(dist(X, diag = T, upper = T))
   kall <- exp(-(dall * dall) / (2 * (h)^2)) # kernel RBF
   
-  # kall <- tanh(X %*% t(X) / (2 * (h)^2)) # kernel Sigmoidal
+  kall <- tanh(X %*% t(X) / (2 * (h)^2)) # kernel Sigmoidal
   
   k11 <- kall[1:nc1, 1:nc1]
   k12 <- kall[(1:nc1),((nc1+1):nc_total)]
