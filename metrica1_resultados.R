@@ -5,6 +5,7 @@ if (length(dev.list())) {
 
 library("kernlab")
 library("mlbench")
+library("RSNNS")
 
 set.seed(203)
 
@@ -84,20 +85,20 @@ for (i in 1:N) {
 # ------- TRATAMENTO ZOO ---------
 
 # ------- TRATAMENTO VEHICLE ---------
-# data4 <- data4[complete.cases(data4),]
-# 
-# label_column <- ncol(data4)
-# 
-# X <- data4[, 1:(ncol(data4) - 1)]
-# Y <- c()
-# 
-# for (i in 1:nrow(data4)) {
-#   if (data4[i, ncol(data4)] == "bus") {
-#     Y <- c(Y, C1_LABEL)
-#   } else {
-#     Y <- c(Y, C2_LABEL)
-#   }
-# }
+data4 <- data4[complete.cases(data4),]
+
+label_column <- ncol(data4)
+
+X <- data4[, 1:(ncol(data4) - 1)]
+Y <- c()
+
+for (i in 1:nrow(data4)) {
+  if (data4[i, ncol(data4)] == "bus") {
+    Y <- c(Y, C1_LABEL)
+  } else {
+    Y <- c(Y, C2_LABEL)
+  }
+}
 
 # ------- TRATAMENTO VEHICLE ---------
 
@@ -120,39 +121,40 @@ for (i in 1:N) {
 # ------- TRATAMENTO GLASS ---------
 
 # ------- TRATAMENTO XOR ---------
-
-N <- 100
-n <- 2
-
-m1 <- c(2,2)
-m2 <- c(4,4)
-m3 <- c(2,4)
-m4 <- c(4,2)
-
-variancia = 0.3
-
-g1 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m1, nrow = N, ncol = n, byrow = T)
-g2 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m2, nrow = N, ncol = n, byrow = T)
-g3 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m3, nrow = N, ncol = n, byrow = T)
-g4 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m4, nrow = N, ncol = n, byrow = T)
-
-xc1 <- rbind(g1, g2)
-xc2 <- rbind(g3, g4)
-
-nc1 <- nrow(xc1)
-nc2 <- nrow(xc2)
-nc_total <- nc1 + nc2
-
-yc1 <- rep(C1_LABEL, nc1)
-yc2 <- rep(C2_LABEL, nc2)
-
-# matriz de entrada
-X <- rbind(xc1, xc2)
-Y <- c(yc1, yc2)
+# 
+# N <- 100
+# n <- 2
+# 
+# m1 <- c(2,2)
+# m2 <- c(4,4)
+# m3 <- c(2,4)
+# m4 <- c(4,2)
+# 
+# variancia = 0.3
+# 
+# g1 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m1, nrow = N, ncol = n, byrow = T)
+# g2 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m2, nrow = N, ncol = n, byrow = T)
+# g3 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m3, nrow = N, ncol = n, byrow = T)
+# g4 <- matrix(rnorm(2 * N), ncol = n, nrow = N)*variancia + matrix(m4, nrow = N, ncol = n, byrow = T)
+# 
+# xc1 <- rbind(g1, g2)
+# xc2 <- rbind(g3, g4)
+# 
+# nc1 <- nrow(xc1)
+# nc2 <- nrow(xc2)
+# nc_total <- nc1 + nc2
+# 
+# yc1 <- rep(C1_LABEL, nc1)
+# yc2 <- rep(C2_LABEL, nc2)
+# 
+# # matriz de entrada
+# X <- rbind(xc1, xc2)
+# Y <- c(yc1, yc2)
 
 # ------- TRATAMENTO XOR ---------
 
 # junta tudo na matriz dos dados
+X <- as.matrix(X)
 all_data <- cbind(X, Y)
 
 # embaralha a matriz dos dados de entrada - remove bias de coleta
@@ -166,20 +168,26 @@ nc_total <- nc1 + nc2
 
 # matriz de entrada
 X <- rbind(xc1, xc2)
+Y <- all_data[, ncol(all_data)]
 
-h_list <- seq(0.1, 5, 0.2) # XOR
+# RBF
+# h_list <- seq(0.1, 5, 0.2) # XOR
 # h_list <- seq(0.1, 20, 1) # BreastCancer
 # h_list <- seq(0.1, 5, 0.1) # Zoo
-# h_list <- seq(0.1, 500, 25) # Vehicle
-# h_list <- seq(0.1, 10, 0.2) # Glass
+h_list <- seq(0.1, 1000, 50) # Vehicle
+# h_list <- seq(0.1, 10, 0.5) # Glass
+
 C <- 10
 
 dist_arr <- c()
 area1_arr <- c()
+acc_array_mean <- c()
 
 for (h in h_list) {
   dall <- as.matrix(dist(X, diag = T, upper = T))
-  kall <- exp(-(dall * dall) / (2 * (h)^2)) # essa é a matriz de kernel
+  kall <- exp(-(dall * dall) / (2 * (h)^2)) # kernel RBF
+  
+  # kall <- tanh(X %*% t(X) / (2 * (h)^2)) # kernel Sigmoidal
   
   k11 <- kall[1:nc1, 1:nc1]
   k12 <- kall[(1:nc1),((nc1+1):nc_total)]
@@ -230,7 +238,7 @@ for (h in h_list) {
   yc <- m1[2] # y_c or k
   a <- a1 # major axis length
   b <- b1 # minor axis length
-  phi <- pi / 3 # angle of major axis with x axis phi or tau
+  phi <- 3 * pi / 3 # angle of major axis with x axis phi or tau
   
   t <- seq(0, 2*pi, 0.01) 
   x <- xc + a*cos(t)*cos(phi) - b*sin(t)*sin(phi)
@@ -249,6 +257,48 @@ for (h in h_list) {
   y <- yc + a*cos(t)*cos(phi) + b*sin(t)*cos(phi)
   
   lines(x,y,pch=19, col='blue', lwd = 4, lty = "dashed")
+  
+  # calcula a acuracia via validação cruzada
+  n_folds <- 5
+  fold_size <- floor(nrow(all_data) / n_folds)
+  
+  acc_array <- c()
+  
+  for (fold in 1:n_folds) {
+    num_of_corrects <- 0
+    
+    start_index <- fold_size * (fold - 1) + 1
+    end_index <- start_index + fold_size
+    
+    if (end_index > nrow(all_data)) {
+      end_index <- end_index - 1
+    }
+    
+    data_for_test <- all_data[start_index:end_index, ]
+    X_test <- data_for_test[, 1:(ncol(all_data) - 1)]
+    Y_test <- data_for_test[, ncol(all_data)]
+    
+    data_for_train <- all_data[-(start_index:end_index), ]
+    X_train <- data_for_train[, 1:(ncol(all_data) - 1)]
+    Y_train <- data_for_train[, ncol(all_data)]
+  
+    
+    # treina a rede
+    svm_train <- ksvm(X_train, Y_train, type='C-bsvc', kernel='rbfdot',
+                      kpar=list(sigma=h), C=C)
+    yhat <- predict(svm_train, X_test, type="response")
+    
+    # compara com a saida de teste e conta os corretos
+    for (i in 1:fold_size) {
+      if (yhat[i] == Y_test[i]) {
+        num_of_corrects <- num_of_corrects + 1
+      } 
+    }
+    
+    acc_array <- c(acc_array, num_of_corrects / fold_size * 100)
+  }
+  
+  acc_array_mean <- c(acc_array_mean, mean(acc_array))
 }
 
 DIST_COL <- "black"
@@ -260,12 +310,16 @@ plot(h_list, dist_arr, ylab = "Distância entre centros", xlab = "h",
      cex.axis = 1.5,pch = 16, cex.lab = 1.5) # first plot
 par(new = TRUE)
 plot(h_list, area1_arr, axes = FALSE, bty = "n", xlab = "", ylab = "",
-     main = "Métricas x h - XOR",
+     main = "Métricas x h - BreastCancer",
      type = "b", col = AREA_COL, lwd = 2, cex.main = 1.5,
      cex.axis = 1.5, cex.lab = 1.5,
      cex.lab = 1.5, pch = 15)
 axis(side=4, at = pretty(range(area1_arr)), col=AREA_COL, cex.axis = 1.5, col.axis=AREA_COL)
 mtext("Área Elipse", side=4, line=3, col=AREA_COL)
+
+plot(h_list, acc_array_mean, ylab = "Acurácia", xlab = "h",
+     type = "b", col = DIST_COL, lwd = 2, cex.main = 1.5,
+     cex.axis = 1.5,pch = 16, cex.lab = 1.5) # first plot
 
 # Add Legend
 # legend("bottom",legend=c("Distância entre Centros","Área da Elipse"),
